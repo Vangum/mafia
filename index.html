@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мафия - Игра для одного телефона</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .player-card.selected {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .player-card.active {
+            border-color: #FFC107;
+            background: rgba(255, 193, 7, 0.2);
+            animation: pulse 1s infinite;
+        }
+
+        .player-card.dead {
+            opacity: 0.5;
+            background: rgba(244, 67, 54, 0.2);
+            border-color: #F44336;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .role-selector {
+            margin: 20px 0;
+        }
+
+        .role-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+            min-width: 150px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .role-reveal {
+            text-align: center;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            margin: 20px 0;
+        }
+
+        .role-text {
+            font-size: 24px;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .role-text.visible {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .game-status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+
+        .timer {
+            font-size: 2em;
+            font-weight: bold;
+            color: #FFC107;
+        }
+
+        .vote-screen {
+            text-align: center;
+        }
+
+        .vote-counter {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .vote-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .game-type-selector {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .game-type-btn {
+            padding: 15px 25px;
+            border: 2px solid #4CAF50;
+            background: transparent;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .game-type-btn.selected {
+            background: #4CAF50;
+        }
+
+        .sheriff-info {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #2196F3;
+            display: none;
+            z-index: 1001;
+        }
+
+        .sheriff-info.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Мафия</h1>
+        
+        <!-- Экран выбора игроков -->
+        <div class="screen active" id="player-selection">
+            <h2>Выберите участников игры</h2>
+            <div class="player-grid" id="player-grid">
+                <div class="player-card" data-player="Вера">👧 Вера</div>
+                <div class="player-card" data-player="Ваня">👦 Ваня</div>
+                <div class="player-card" data-player="Лида">🙎‍♀️ Лида</div>
+                <div class="player-card" data-player="Вова">🧑‍🎤 Вова</div>
+                <div class="player-card" data-player="Вася">💻 Вася</div>
+                <div class="player-card" data-player="Андрей">🥸 Андрей</div>
+                <div class="player-card" data-player="Денис">🥇 Денис</div>
+                <div class="player-card" data-player="Дядя">👤 Никто</div>
+            </div>
+            <button class="btn" id="start-game-btn" disabled>Играть</button>
+        </div>
+
+        <!-- Экран выбора ролей -->
+        <div class="screen" id="role-selection">
+            <h2>Настройка ролей</h2>
+            <div class="game-type-selector">
+                <button class="game-type-btn selected" data-type="open">Открытая игра</button>
+                <button class="game-type-btn" data-type="closed">Закрытая игра</button>
+            </div>
+            <div class="role-selector">
+                <div class="role-item">
+                    <span>🔴 Мафия:</span>
+                    <input type="number" id="mafia-count" min="1" max="3" value="2">
+                </div>
+                <div class="role-item">
+                    <span>🚔 Шериф:</span>
+                    <input type="number" id="sheriff-count" min="0" max="1" value="1">
+                </div>
+                <div class="role-item">
+                    <span>👨‍⚕️ Доктор:</span>
+                    <input type="number" id="doctor-count" min="0" max="1" value="1">
+                </div>
+                <div class="role-item">
+                    <span>👥 Мирные жители:</span>
+                    <span id="citizen-count">0</span>
+                </div>
+            </div>
+            <button class="btn" id="distribute-roles-btn">Раздать роли</button>
+        </div>
+
+        <!-- Экран раздачи ролей -->
+        <div class="screen" id="role-reveal">
+            <div class="role-reveal">
+                <h2>Передайте телефон игроку:</h2>
+                <div class="player-card" id="current-player-card">
+                    <div id="current-player-name">Игрок</div>
+                </div>
+                <div class="role-text" id="role-text">
+                    <div id="role-description"></div>
+                </div>
+                <button class="btn" id="reveal-role-btn">Узнать роль</button>
+                <button class="btn" id="next-player-btn" style="display: none;">Далее</button>
+            </div>
+        </div>
+
+        <!-- Главный игровой экран -->
+        <div class="screen" id="game-screen">
+            <div class="game-status">
+                <h2 id="game-phase">День 1</h2>
+                <div id="game-message">Нажмите "Начать" для начала игры</div>
+                <div class="timer" id="timer" style="display: none;"></div>
+            </div>
+            <div class="player-grid" id="game-player-grid"></div>
+            <button class="btn" id="start-night-btn">Начать</button>
+            <button class="btn" id="next-phase-btn" style="display: none;">Следующая фаза</button>
+        </div>
+
+        <!-- Экран голосования -->
+        <div class="screen" id="voting-screen">
+            <div class="vote-screen">
+                <h2>Голосование</h2>
+                <div id="current-voter-name">Очередь игрока: </div>
+                <div class="player-grid" id="vote-player-grid"></div>
+                <div class="vote-counter" id="vote-counter"></div>
+                <button class="btn" id="finish-voting-btn" style="display: none;">Завершить голосование</button>
+            </div>
+        </div>
+
+        <!-- Модальное окно завершения игры -->
+        <div class="modal" id="game-end-modal">
+            <div class="modal-content">
+                <h2 id="winner-announcement"></h2>
+                <p id="game-summary"></p>
+                <button class="btn" onclick="location.reload()">Новая игра</button>
+            </div>
+        </div>
+
+        <!-- Информация для шерифа -->
+        <div class="sheriff-info" id="sheriff-info">
+            <h3>Информация для шерифа</h3>
+            <p id="sheriff-result"></p>
+            <button class="btn" onclick="closeSheriffInfo()">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        class MafiaGame {
+            constructor() {
+                this.players = [];
+                this.selectedPlayers = [];
+                this.roles = {};
+                this.gameType = 'open';
+                this.currentRoleIndex = 0;
+                this.gamePhase = 'setup';
+                this.day = 1;
+                this.nightActions = {};
+                this.votingOrder = [];
+                this.currentVoter = 0;
+                this.votes = {};
+                this.deadPlayers = [];
+                this.lastHealed = null;
+                this.monologueTimer = null;
+                this.currentMonologuePlayer = 0;
+                this.firstKilled = null;
+                
+                this.initializeEventListeners();
+                this.updateCitizenCount();
+            }
+
+            initializeEventListeners() {
+                // Выбор игроков
+                document.querySelectorAll('#player-grid .player-card').forEach(card => {
+                    card.addEventListener('click', () => this.togglePlayer(card));
+                });
+
+                // Кнопки
+                document.getElementById('start-game-btn').addEventListener('click', () => this.startRoleSelection());
+                document.getElementById('distribute-roles-btn').addEventListener('click', () => this.distributeRoles());
+                document.getElementById('reveal-role-btn').addEventListener('click', () => this.revealRole());
+                document.getElementById('next-player-btn').addEventListener('click', () => this.nextPlayer());
+                document.getElementById('start-night-btn').addEventListener('click', () => this.startNight());
+                document.getElementById('next-phase-btn').addEventListener('click', () => this.nextPhase());
+                document.getElementById('finish-voting-btn').addEventListener('click', () => this.finishVoting());
+
+                // Тип игры
+                document.querySelectorAll('.game-type-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.selectGameType(e.target.dataset.type));
+                });
+
+                // Счетчики ролей
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.addEventListener('change', () => this.updateCitizenCount());
+                });
+            }
+
+            togglePlayer(card) {
+                const playerName = card.dataset.player;
+                if (this.selectedPlayers.includes(playerName)) {
+                    this.selectedPlayers = this.selectedPlayers.filter(p => p !== playerName);
+                    card.classList.remove('selected');
+                } else {
+                    this.selectedPlayers.push(playerName);
+                    card.classList.add('selected');
+                }
+                
+                document.getElementById('start-game-btn').disabled = this.selectedPlayers.length < 4;
+            }
+
+            selectGameType(type) {
+                this.gameType = type;
+                document.querySelectorAll('.game-type-btn').forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.type === type);
+                });
+            }
+
+            updateCitizenCount() {
+                const mafia = parseInt(document.getElementById('mafia-count').value) || 0;
+                const sheriff = parseInt(document.getElementById('sheriff-count').value) || 0;
+                const doctor = parseInt(document.getElementById('doctor-count').value) || 0;
+                const citizens = Math.max(0, this.selectedPlayers.length - mafia - sheriff - doctor);
+                document.getElementById('citizen-count').textContent = citizens;
+            }
+
+            startRoleSelection() {
+                this.showScreen('role-selection');
+                this.updateCitizenCount();
+            }
+
+            distributeRoles() {
+                const mafiaCount = parseInt(document.getElementById('mafia-count').value);
+                const sheriffCount = parseInt(document.getElementById('sheriff-count').value);
+                const doctorCount = parseInt(document.getElementById('doctor-count').value);
+
+                // Создаем массив ролей
+                const roleArray = [];
+                for (let i = 0; i < mafiaCount; i++) roleArray.push('mafia');
+                for (let i = 0; i < sheriffCount; i++) roleArray.push('sheriff');
+                for (let i = 0; i < doctorCount; i++) roleArray.push('doctor');
+                
+                const remainingSlots = this.selectedPlayers.length - roleArray.length;
+                for (let i = 0; i < remainingSlots; i++) roleArray.push('citizen');
+
+                // Перемешиваем роли
+                for (let i = roleArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [roleArray[i], roleArray[j]] = [roleArray[j], roleArray[i]];
+                }
+
+                // Назначаем роли игрокам
+                this.selectedPlayers.forEach((player, index) => {
+                    this.roles[player] = roleArray[index];
+                });
+
+                this.currentRoleIndex = 0;
+                this.showRoleToCurrentPlayer();
+                this.showScreen('role-reveal');
+            }
+
+            showRoleToCurrentPlayer() {
+                const currentPlayer = this.selectedPlayers[this.currentRoleIndex];
+                document.getElementById('current-player-name').textContent = currentPlayer;
+                document.getElementById('role-text').classList.remove('visible');
+                document.getElementById('reveal-role-btn').style.display = 'block';
+                document.getElementById('next-player-btn').style.display = 'none';
+            }
+
+            revealRole() {
+                const currentPlayer = this.selectedPlayers[this.currentRoleIndex];
+                const role = this.roles[currentPlayer];
+                const roleDescriptions = {
+                    'mafia': '🔴 Вы - МАФИЯ! Ваша цель - уничтожить всех мирных жителей. Ночью вы можете убить одного игрока.',
+                    'sheriff': '🚔 Вы - ШЕРИФ! Ваша цель - найти всю мафию. Ночью вы можете проверить роль одного игрока.',
+                    'doctor': '👨‍⚕️ Вы - ДОКТОР! Ваша цель - спасти мирных жителей. Ночью вы можете вылечить одного игрока. Нельзя лечить одного игрока два раза подряд.',
+                    'citizen': '👥 Вы - МИРНЫЙ ЖИТЕЛЬ! Ваша цель - найти всю мафию. Днём участвуйте в обсуждениях и голосованиях.'
+                };
+
+                document.getElementById('role-description').innerHTML = roleDescriptions[role];
+                document.getElementById('role-text').classList.add('visible');
+                document.getElementById('reveal-role-btn').style.display = 'none';
+                document.getElementById('next-player-btn').style.display = 'block';
+            }
+
+            nextPlayer() {
+                this.currentRoleIndex++;
+                if (this.currentRoleIndex < this.selectedPlayers.length) {
+                    this.showRoleToCurrentPlayer();
+                } else {
+                    this.startGame();
+                }
+            }
+
+            startGame() {
+                this.showScreen('game-screen');
+                this.createGamePlayerGrid();
+                this.gamePhase = 'day';
+                document.getElementById('game-phase').textContent = `День ${this.day}`;
+                document.getElementById('game-message').textContent = 'Нажмите "Начать" для начала игры';
+            }
+
+            createGamePlayerGrid() {
+                const grid = document.getElementById('game-player-grid');
+                grid.innerHTML = '';
+                
+                this.selectedPlayers.forEach(player => {
+                    const card = document.createElement('div');
+                    card.className = 'player-card';
+                    card.dataset.player = player;
+                    card.innerHTML = `${this.getPlayerEmoji(player)} ${player}`;
+                    
+                    if (this.deadPlayers.includes(player)) {
+                        card.classList.add('dead');
+                    }
+                    
+                    grid.appendChild(card);
+                });
+            }
+
+            getPlayerEmoji(player) {
+                const emojis = {
+                    'Мама': '👩‍🦱', 'Папа': '👨‍🦱', 'Сын': '👦', 'Дочь': '👧',
+                    'Бабушка': '👵', 'Дедушка': '👴', 'Тётя': '👩‍🦰', 'Дядя': '👨‍🦰'
+                };
+                return emojis[player] || '👤';
+            }
+
+            startNight() {
+                this.gamePhase = 'night';
+                this.nightActions = {};
+                document.getElementById('game-phase').textContent = `Ночь ${this.day}`;
+                document.getElementById('start-night-btn').style.display = 'none';
+                document.getElementById('next-phase-btn').style.display = 'block';
+                
+                this.speak('Город засыпает. Наступает ночь. Все закрывают глаза.');
+                
+                setTimeout(() => {
+                    this.processMafiaAction();
+                }, 3000);
+            }
+
+            processMafiaAction() {
+                const aliveMafia = this.selectedPlayers.filter(p => 
+                    this.roles[p] === 'mafia' && !this.deadPlayers.includes(p)
+                );
+                
+                if (aliveMafia.length > 0) {
+                    this.speak('Мафия просыпается и выбирает жертву.');
+                    document.getElementById('game-message').textContent = 'Мафия выбирает жертву';
+                    this.enablePlayerSelection('mafia-kill', (target) => {
+                        this.nightActions.mafiaKill = target;
+                        this.processDoctorAction();
+                    });
+                } else {
+                    this.processDoctorAction();
+                }
+            }
+
+            processDoctorAction() {
+                const aliveDoctor = this.selectedPlayers.find(p => 
+                    this.roles[p] === 'doctor' && !this.deadPlayers.includes(p)
+                );
+                
+                if (aliveDoctor) {
+                    this.speak('Доктор просыпается и выбирает, кого лечить.');
+                    document.getElementById('game-message').textContent = 'Доктор выбирает пациента';
+                    this.enablePlayerSelection('doctor-heal', (target) => {
+                        if (target === this.lastHealed) {
+                            alert('Нельзя лечить одного игрока два раза подряд!');
+                            return;
+                        }
+                        this.nightActions.doctorHeal = target;
+                        this.lastHealed = target;
+                        this.processSheriffAction();
+                    });
+                } else {
+                    this.processSheriffAction();
+                }
+            }
+
+            processSheriffAction() {
+                const aliveSheriff = this.selectedPlayers.find(p => 
+                    this.roles[p] === 'sheriff' && !this.deadPlayers.includes(p)
+                );
+                
+                if (aliveSheriff) {
+                    this.speak('Шериф просыпается и проводит проверку.');
+                    document.getElementById('game-message').textContent = 'Шериф проверяет игрока';
+                    this.enablePlayerSelection('sheriff-check', (target) => {
+                        this.nightActions.sheriffCheck = target;
+                        this.showSheriffResult(target);
+                    });
+                } else {
+                    this.processNightResults();
+                }
+            }
+
+            showSheriffResult(target) {
+                const role = this.roles[target];
+                const isMafia = role === 'mafia';
+                document.getElementById('sheriff-result').textContent = 
+                    `${target} - ${isMafia ? 'МАФИЯ' : 'НЕ МАФИЯ'}`;
+                document.getElementById('sheriff-info').classList.add('visible');
+            }
+
+            enablePlayerSelection(action, callback) {
+                document.querySelectorAll('#game-player-grid .player-card').forEach(card => {
+                    if (!card.classList.contains('dead')) {
+                        card.style.cursor = 'pointer';
+                        card.onclick = () => {
+                            const player = card.dataset.player;
+                            this.disablePlayerSelection();
+                            callback(player);
+                        };
+                    }
+                });
+            }
+
+            disablePlayerSelection() {
+                document.querySelectorAll('#game-player-grid .player-card').forEach(card => {
+                    card.style.cursor = 'default';
+                    card.onclick = null;
+                });
+            }
+
+            processNightResults() {
+                // Обработка результатов ночи
+                if (this.nightActions.mafiaKill) {
+                    const victim = this.nightActions.mafiaKill;
+                    const saved = this.nightActions.doctorHeal === victim;
+                    
+                    if (!saved) {
+                        this.deadPlayers.push(victim);
+                        if (!this.firstKilled) {
+                            this.firstKilled = victim;
+                        }
+                    }
+                }
+                
+                this.day++;
+                this.gamePhase = 'day';
+                document.getElementById('game-phase').textContent = `День ${this.day}`;
+                
+                // Обновляем отображение игроков
+                this.createGamePlayerGrid();
+                
+                // Объявляем результаты
+                this.announceNightResults();
+                
+                // Проверяем условия победы
+                if (this.checkWinConditions()) {
+                    return;
+                }
+                
+                // Начинаем монологи
+                this.startMonologues();
+            }
+
+            announceNightResults() {
+                if (this.nightActions.mafiaKill) {
+                    const victim = this.nightActions.mafiaKill;
+                    const saved = this.nightActions.doctorHeal === victim;
+                    
+                    if (saved) {
+                        this.speak(`Этой ночью никто не пострадал. Доктор спас жизнь.`);
+                        document.getElementById('game-message').textContent = 'Этой ночью никто не пострадал';
+                    } else {
+                        this.speak(`Этой ночью был убит ${victim}.`);
+                        document.getElementById('game-message').textContent = `Убит: ${victim}`;
+                    }
+                } else {
+                    this.speak('Этой ночью никто не пострадал.');
+                    document.getElementById('game-message').textContent = 'Этой ночью никто не пострадал';
+                }
+            }
+
+            startMonologues() {
+                this.currentMonologuePlayer = 0;
+                const alivePlayers = this.selectedPlayers.filter(p => !this.deadPlayers.includes(p));
+                
+                if (alivePlayers.length === 0) return;
+                
+                this.processNextMonologue();
+            }
+
+            processNextMonologue() {
+                const alivePlayers = this.selectedPlayers.filter(p => !this.deadPlayers.includes(p));
+                
+                if (this.currentMonologuePlayer >= alivePlayers.length) {
+                    this.startVoting();
+                    return;
+                }
+                
+                const currentPlayer = alivePlayers[this.currentMonologuePlayer];
+                document.getElementById('game-message').textContent = `Монолог: ${currentPlayer}`;
+                
+                // Выделяем текущего игрока
+                document.querySelectorAll('#game-player-grid .player-card').forEach(card => {
+                    card.classList.remove('active');
+                    if (card.dataset.player === currentPlayer) {
+                        card.classList.add('active');
+                    }
+                });
+                
+                this.startTimer(60, () => {
+                    this.currentMonologuePlayer++;
+                    this.processNextMonologue();
+                });
+            }
+
+            startTimer(seconds, callback) {
+                let timeLeft = seconds;
+                const timerElement = document.getElementById('timer');
+                timerElement.style.display = 'block';
+                timerElement.textContent = timeLeft;
+                
+                // Кнопка пропуска
+                const skipBtn = document.createElement('button');
+                skipBtn.textContent = 'Пропустить';
+                skipBtn.className = 'btn';
+                skipBtn.onclick = () => {
+                    clearInterval(this.monologueTimer);
+                    skipBtn.remove();
+                    timerElement.style.display = 'none';
+                    callback();
+                };
+                timerElement.parentNode.appendChild(skipBtn);
+                
+                this.monologueTimer = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(this.monologueTimer);
+                        skipBtn.remove();
+                        timerElement.style.display = 'none';
+                        callback();
+                    }
+                }, 1000);
+            }
+
+            startVoting() {
+                this.votes = {};
+                this.votingOrder = this.selectedPlayers.filter(p => !this.deadPlayers.includes(p));
+                this.currentVoter = 0;
+                
+                // Убираем подсветку с игроков
+                document.querySelectorAll('#game-player-grid .player-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                
+                this.showScreen('voting-screen');
+                this.createVotePlayerGrid();
+                this.processNextVote();
+            }
+
+            createVotePlayerGrid() {
+                const grid = document.getElementById('vote-player-grid');
+                grid.innerHTML = '';
+                
+                this.selectedPlayers.forEach(player => {
+                    if (!this.deadPlayers.includes(player)) {
+                        const card = document.createElement('div');
+                        card.className = 'player-card';
+                        card.dataset.player = player;
+                        card.innerHTML = `${this.getPlayerEmoji(player)} ${player}`;
+                        grid.appendChild(card);
+                    }
+                });
+                
+                this.updateVoteCounter();
+            }
+
+            processNextVote() {
+                if (this.currentVoter >= this.votingOrder.length) {
+                    this.processVotingResults();
+                    return;
+                }
+                
+                const currentVoter = this.votingOrder[this.currentVoter];
+                document.getElementById('current-voter-name').textContent = `Очередь игрока: ${currentVoter}`;
+                
+                // Подсвечиваем текущего голосующего
+                document.querySelectorAll('#vote-player-grid .player-card').forEach(card => {
+                    card.classList.remove('active');
+                    if (card.dataset.player === currentVoter) {
+                        card.classList.add('active');
+                    }
+                });
+                
+                // Включаем возможность голосования
+                document.querySelectorAll('#vote-player-grid .player-card').forEach(card => {
+                    if (card.dataset.player !== currentVoter) {
+                        card.style.cursor = 'pointer';
+                        card.onclick = () => {
+                            const target = card.dataset.player;
+                            this.castVote(currentVoter, target);
+                        };
+                    }
+                });
+            }
+
+            castVote(voter, target) {
+                this.votes[voter] = target;
+                
+                // Отключаем голосование
+                document.querySelectorAll('#vote-player-grid .player-card').forEach(card => {
+                    card.style.cursor = 'default';
+                    card.onclick = null;
+                });
+                
+                this.updateVoteCounter();
+                this.currentVoter++;
+                
+                setTimeout(() => {
+                    this.processNextVote();
+                }, 1000);
+            }
+
+            updateVoteCounter() {
+                const counter = document.getElementById('vote-counter');
+                counter.innerHTML = '';
+                
+                const voteCount = {};
+                Object.values(this.votes).forEach(target => {
+                    voteCount[target] = (voteCount[target] || 0) + 1;
+                });
+                
+                Object.entries(voteCount).forEach(([player, count]) => {
+                    const item = document.createElement('div');
+                    item.className = 'vote-item';
+                    item.innerHTML = `${player}: ${count} голос${count > 1 ? 'а' : ''}`;
+                    counter.appendChild(item);
+                });
+                
+                if (this.currentVoter >= this.votingOrder.length && Object.keys(this.votes).length > 0) {
+                    document.getElementById('finish-voting-btn').style.display = 'block';
+                }
+            }
+
+            processVotingResults() {
+                const voteCount = {};
+                Object.values(this.votes).forEach(target => {
+                    voteCount[target] = (voteCount[target] || 0) + 1;
+                });
+                
+                // Находим игрока с максимальным количеством голосов
+                let maxVotes = 0;
+                let eliminated = [];
+                
+                Object.entries(voteCount).forEach(([player, count]) => {
+                    if (count > maxVotes) {
+                        maxVotes = count;
+                        eliminated = [player];
+                    } else if (count === maxVotes) {
+                        eliminated.push(player);
+                    }
+                });
+                
+                if (eliminated.length === 1 && maxVotes > 0) {
+                    const eliminatedPlayer = eliminated[0];
+                    this.deadPlayers.push(eliminatedPlayer);
+                    
+                    if (!this.firstKilled) {
+                        this.firstKilled = eliminatedPlayer;
+                    }
+                    
+                    this.speak(`По результатам голосования город исключил ${eliminatedPlayer}.`);
+                    
+                    if (this.gameType === 'open') {
+                        const role = this.roles[eliminatedPlayer];
+                        const roleNames = {
+                            'mafia': 'Мафия',
+                            'sheriff': 'Шериф',
+                            'doctor': 'Доктор',
+                            'citizen': 'Мирный житель'
+                        };
+                        this.speak(`${eliminatedPlayer} был ${roleNames[role]}.`);
+                    }
+                } else {
+                    this.speak('Голосование не определило победителя. Никто не исключен.');
+                }
+                
+                // Возвращаемся к основному экрану
+                this.showScreen('game-screen');
+                this.createGamePlayerGrid();
+                
+                // Проверяем условия победы
+                if (this.checkWinConditions()) {
+                    return;
+                }
+                
+                // Готовимся к следующей ночи
+                document.getElementById('start-night-btn').style.display = 'block';
+                document.getElementById('start-night-btn').textContent = 'Следующая ночь';
+                document.getElementById('next-phase-btn').style.display = 'none';
+                document.getElementById('game-message').textContent = 'Готовы к следующей ночи?';
+            }
+
+            finishVoting() {
+                this.processVotingResults();
+            }
+
+            checkWinConditions() {
+                const alivePlayers = this.selectedPlayers.filter(p => !this.deadPlayers.includes(p));
+                const aliveMafia = alivePlayers.filter(p => this.roles[p] === 'mafia');
+                const aliveCitizens = alivePlayers.filter(p => this.roles[p] !== 'mafia');
+                
+                let winner = null;
+                let message = '';
+                
+                if (aliveMafia.length === 0) {
+                    winner = 'Мирные жители';
+                    message = 'Все члены мафии найдены и исключены!';
+                } else if (aliveMafia.length >= aliveCitizens.length) {
+                    winner = 'Мафия';
+                    message = 'Мафия захватила город!';
+                }
+                
+                if (winner) {
+                    this.endGame(winner, message);
+                    return true;
+                }
+                
+                return false;
+            }
+
+            endGame(winner, message) {
+                document.getElementById('winner-announcement').textContent = `Победили: ${winner}!`;
+                document.getElementById('game-summary').innerHTML = `
+                    ${message}<br><br>
+                    ${this.firstKilled ? `Первый убитый: ${this.firstKilled} (получает иммунитет)` : ''}
+                `;
+                document.getElementById('game-end-modal').classList.add('active');
+                
+                this.speak(`Игра окончена! Победили ${winner}!`);
+            }
+
+            nextPhase() {
+                if (this.gamePhase === 'night') {
+                    this.processNightResults();
+                }
+            }
+
+            showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.remove('active');
+                });
+                document.getElementById(screenId).classList.add('active');
+            }
+
+            speak(text) {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ru-RU';
+                    utterance.rate = 0.8;
+                    utterance.pitch = 0.8;
+                    speechSynthesis.speak(utterance);
+                }
+            }
+        }
+
+        // Глобальные функции
+        function closeSheriffInfo() {
+            document.getElementById('sheriff-info').classList.remove('visible');
+            // Продолжаем обработку ночи после закрытия информации шерифа
+            if (window.game) {
+                window.game.processNightResults();
+            }
+        }
+
+        // Инициализация игры
+        window.addEventListener('DOMContentLoaded', () => {
+            window.game = new MafiaGame();
+        });
+    </script>
+</body>
+</html>
